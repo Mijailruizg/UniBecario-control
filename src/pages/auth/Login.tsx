@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { isValidInstitutionalEmail } from '../../lib/auth';
 import { useAuthStore } from '../../store/useAuthStore';
 
 export const Login = () => {
@@ -16,72 +15,6 @@ export const Login = () => {
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    // --- MOCK LOGIN Bypasses Supabase for UI Demo ---
-    if (
-      (email === 'scz.admin.principal@unifranz.edu.bo') ||
-      (email === 'scze.mijailandres.ruiz.ga@unifranz.edu.bo' && password === '69129015Mijail') || 
-      (email === 'scz.mijailandres.ruiz.ga@unifranz.edu.bo' && password === '69129015Mijail')
-    ) {
-      const allMockUsers = JSON.parse(localStorage.getItem('mockUsersData') || '{}');
-      let mockAdmin = allMockUsers[email];
-      
-      if (!mockAdmin) {
-        mockAdmin = {
-          id: 'mock-admin-' + Date.now(),
-          correo: email,
-          nombre: 'Mijail Andres Ruiz',
-          rol: 'admin' as const,
-          estado: 'activo' as const,
-          fecha_inicio_beca: null,
-          fecha_fin_beca: null,
-          carrera: 'Ingeniería de Sistemas',
-          semestre: '8vo',
-          gestion: '1/2026',
-          area_jefe: 'Rectorado',
-          foto_perfil: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-      }
-      
-      setUser(mockAdmin);
-      setSession({ user: { id: mockAdmin.id } });
-      navigate('/admin/dashboard');
-      return;
-    }
-
-    if (email === 'scz.becario.prueba@unifranz.edu.bo' || email === 'scze.camilanadyn.ajhuacho.co@unifranz.edu.bo') {
-      const allMockUsers = JSON.parse(localStorage.getItem('mockUsersData') || '{}');
-      let mockStudent = allMockUsers[email];
-      
-      if (!mockStudent) {
-        mockStudent = {
-          id: 'mock-student-' + Date.now(),
-          correo: email,
-          nombre: email.includes('camila') ? 'Camila Nadyn Ajhuacho' : 'Estudiante Becario',
-          rol: 'becario' as const,
-          estado: 'activo' as const,
-          fecha_inicio_beca: '2026-03-01',
-          fecha_fin_beca: '2026-07-01',
-          carrera: 'Medicina',
-          semestre: '5to',
-          gestion: '1/2026',
-          area_jefe: 'Biblioteca',
-          foto_perfil: null,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-      }
-      
-      setUser(mockStudent);
-      setSession({ user: { id: mockStudent.id } });
-      navigate('/student/dashboard');
-      return;
-    }
-    // ------------------------------------------------
-
-    // ------------------------------------------------
 
     setLoading(true);
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -99,7 +32,7 @@ export const Login = () => {
     const { data: userData, error: userError } = await supabase
       .from('usuarios')
       .select('*')
-      .eq('correo', authData.user.email)
+      .eq('id', authData.user.id)
       .single();
 
     setLoading(false);
@@ -108,6 +41,9 @@ export const Login = () => {
       setError('Error al obtener datos del usuario.');
       return;
     }
+
+    setSession(authData.session);
+    setUser(userData);
 
     if (userData.estado === 'pendiente' || userData.estado === 'rechazado') {
       navigate('/pending');

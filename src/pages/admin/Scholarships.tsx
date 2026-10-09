@@ -17,39 +17,32 @@ export const AdminScholarships = () => {
 
   const fetchBecas = async () => {
     setLoading(true);
-    const storedBecas = JSON.parse(localStorage.getItem('mockScholarshipsList') || '[]');
-    if (storedBecas.length > 0) {
-      setBecas(storedBecas);
-    } else {
-      setBecas([
-        { id: 'mock-beca-1', nombre: 'Semestre 1/2026', fecha_inicio: '2026-03-01', fecha_fin: '2026-07-31', estado: true, created_at: new Date().toISOString() }
-      ]);
-    }
+    const { data, error } = await supabase.from('becas').select('*').order('fecha_inicio', { ascending: false });
+    if (error) alert(error.message);
+    setBecas(data || []);
     setLoading(false);
   };
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    const nueva = { id: 'mock-beca-' + Date.now(), ...newBeca, estado: true, created_at: new Date().toISOString() };
-    const actualizadas = [nueva, ...becas];
-    setBecas(actualizadas as any);
-    localStorage.setItem('mockScholarshipsList', JSON.stringify(actualizadas));
+    const { error } = await supabase.from('becas').insert(newBeca);
+    if (error) return alert(error.message);
     setShowModal(false);
     setNewBeca({ nombre: '', fecha_inicio: '', fecha_fin: '' });
+    await fetchBecas();
   };
 
   const toggleStatus = async (id: string, currentStatus: boolean) => {
-    const actualizadas = becas.map(b => b.id === id ? { ...b, estado: !currentStatus } : b);
-    setBecas(actualizadas);
-    localStorage.setItem('mockScholarshipsList', JSON.stringify(actualizadas));
+    const { error } = await supabase.from('becas').update({ estado: !currentStatus }).eq('id', id);
+    if (error) return alert(error.message);
+    await fetchBecas();
   };
 
   const deleteBeca = async (id: string) => {
-    if (confirm('¿Estás seguro de eliminar este ciclo de beca?')) {
-      const actualizadas = becas.filter(b => b.id !== id);
-      setBecas(actualizadas);
-      localStorage.setItem('mockScholarshipsList', JSON.stringify(actualizadas));
-    }
+    if (!confirm('¿Estás seguro de eliminar este ciclo de beca?')) return;
+    const { error } = await supabase.from('becas').delete().eq('id', id);
+    if (error) return alert(error.message);
+    await fetchBecas();
   };
 
   return (

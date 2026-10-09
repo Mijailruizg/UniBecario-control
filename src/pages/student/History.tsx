@@ -15,21 +15,6 @@ export const StudentHistory = () => {
     const fetchHistory = async () => {
       if (!user) return;
 
-      if (user.id.startsWith('mock-')) {
-        const past = JSON.parse(localStorage.getItem('mockHistory') || '[]');
-        if (past.length === 0) {
-          const dummy = [{
-            id: 'dummy-1', fecha: '2026-03-20', hora_inicio: '08:00:00', hora_fin: '12:00:00',
-            total_horas: 4.0, actividad: 'Revisión y orden de inventario inicial.'
-          }];
-          setHistory(dummy);
-        } else {
-          setHistory(past);
-        }
-        setLoading(false);
-        return;
-      }
-
       const { data } = await supabase
         .from('registros_horas')
         .select('*')
@@ -70,26 +55,6 @@ export const StudentHistory = () => {
   const handleDeleteRecord = async (id: string, horas: number) => {
     if (!window.confirm('¿Estás seguro de eliminar este registro? Las horas se restarán de tu progreso.')) return;
     
-    if (user?.id.startsWith('mock-')) {
-       // Eliminar del localStorage
-       const currentHistory = JSON.parse(localStorage.getItem('mockHistory') || '[]');
-       const newHistory = currentHistory.filter((r: any) => r.id !== id);
-       localStorage.setItem('mockHistory', JSON.stringify(newHistory));
-       
-       // Si era un user dummy hardcodeado:
-       if (id.startsWith('dummy-')) {
-         setHistory(history.filter(r => r.id !== id));
-       } else {
-         setHistory(newHistory);
-       }
-       
-       // Restar horas del dashboard global
-       let currentMockTotal = parseFloat(localStorage.getItem('mockTotalHoras') || '120.5');
-       currentMockTotal = Math.max(0, currentMockTotal - (horas || 0));
-       localStorage.setItem('mockTotalHoras', currentMockTotal.toString());
-       return;
-    }
-
     const { error } = await supabase.from('registros_horas').delete().eq('id', id);
     if (!error) {
        setHistory(prev => prev.filter(r => r.id !== id));

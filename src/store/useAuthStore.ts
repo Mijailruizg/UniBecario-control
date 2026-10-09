@@ -1,31 +1,24 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import type { Session } from '@supabase/supabase-js';
 import { User } from '../types/supabase';
 
 interface AuthState {
   user: User | null;
-  session: any | null;
+  session: Session | null;
   isLoading: boolean;
   setUser: (user: User | null) => void;
-  setSession: (session: any | null) => void;
+  setSession: (session: Session | null) => void;
   setLoading: (loading: boolean) => void;
   logout: () => void;
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      session: null,
-      isLoading: true,
-      setUser: (user) => set({ user }),
-      setSession: (session) => set({ session, isLoading: false }),
-      setLoading: (isLoading) => set({ isLoading }),
-      logout: () => set({ user: null, session: null })
-    }),
-    {
-      name: 'auth-store',
-      partialize: (state) => ({ user: state.user, session: state.session })
-    }
-  )
-);
+// Nunca restaurar privilegios desde localStorage; Supabase valida cada sesión.
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  session: null,
+  isLoading: true,
+  setUser: (user) => set({ user }),
+  setSession: (session) => set({ session, isLoading: false }),
+  setLoading: (isLoading) => set({ isLoading }),
+  logout: () => set({ user: null, session: null }),
+}));

@@ -1,0 +1,43 @@
+name: Auditoria OWASP ZAP (baseline pasivo)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zap-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      ZAP_TARGET_URL: ${{ vars.ZAP_TARGET_URL }}
+    steps:
+      - name: Validar URL de aplicacion autorizada
+        shell: bash
+        run: |
+          if [[ -z "$ZAP_TARGET_URL" || ! "$ZAP_TARGET_URL" =~ ^https:// ]]; then
+            echo "::error::Configura la variable Actions ZAP_TARGET_URL con la URL HTTPS de tu aplicacion o staging."
+            exit 1
+          fi
+          echo "OWASP ZAP baseline pasivo para URL HTTPS autorizada."
+      - name: Preparar directorio de reportes
+        run: |
+          mkdir -p zap-output
+          chmod 777 zap-output
+      - name: Ejecutar OWASP ZAP baseline
+        shell: bash
+        run: |
+          docker run --rm \
+            -v "$PWD/zap-output:/zap/wrk/:rw" \
+            ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t "$ZAP_TARGET_URL" -m 1 -T 10 \
+            -r reporte-zap.html -J reporte-zap.json -I
+      - name: Publicar reporte para revision
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-owasp-zap
+          path: zap-output/
+          if-no-files-found: warn
+          retention-days: 7

@@ -23,11 +23,6 @@ function App() {
   const { user, setUser, setSession, isLoading, setLoading } = useAuthStore();
 
   useEffect(() => {
-    if (user?.id?.startsWith('mock-')) {
-      setLoading(false);
-      return;
-    }
-
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session?.user) fetchProfile(session.user.id);
@@ -43,7 +38,7 @@ function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [setSession, setUser, user?.id]);
+  }, [setSession, setUser]);
 
   const fetchProfile = async (userId: string) => {
     const { data } = await supabase.from('usuarios').select('*').eq('id', userId).single();

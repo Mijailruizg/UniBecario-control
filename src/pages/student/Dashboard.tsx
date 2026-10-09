@@ -24,15 +24,6 @@ export const StudentDashboard = () => {
     if (!user) return;
     setLoading(true);
 
-    if (user.id.startsWith('mock-')) {
-      const stored = localStorage.getItem('mockSession');
-      if (stored) setActiveSession(JSON.parse(stored));
-      const currentMockTotal = parseFloat(localStorage.getItem('mockTotalHoras') || '120.5');
-      setTotalHours(currentMockTotal);
-      setLoading(false);
-      return;
-    }
-
     // Get active session (today, no end time)
     const today = new Date().toISOString().split('T')[0];
     const { data: sessionData } = await supabase
@@ -70,14 +61,6 @@ export const StudentDashboard = () => {
     const now = new Date();
     const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
     
-    if (user.id.startsWith('mock-')) {
-      const mockS = { id: 'mock-session-1', hora_inicio: timeString, fecha: now.toISOString().split('T')[0], usuario_id: user.id };
-      localStorage.setItem('mockSession', JSON.stringify(mockS));
-      setActiveSession(mockS as any);
-      setActionLoading(false);
-      return;
-    }
-
     const { data, error: insertError } = await supabase
       .from('registros_horas')
       .insert({
@@ -106,8 +89,7 @@ export const StudentDashboard = () => {
     setActionLoading(true);
     setError('');
 
-    if (user.id.startsWith('mock-')) {
-      const now = new Date();
+    const now = new Date();
       const timeEnd = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
       
       const startParts = activeSession.hora_inicio.split(':');

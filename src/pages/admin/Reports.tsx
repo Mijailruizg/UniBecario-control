@@ -14,8 +14,10 @@ export const AdminReports = () => {
   const [statusFilter, setStatusFilter] = useState<'todos' | 'activo' | 'inactivo'>('todos');
 
   useEffect(() => {
-    const localUsers = JSON.parse(localStorage.getItem('mockAdminUsersList') || '[]');
-    setUsers(localUsers);
+    supabase.from('usuarios').select('*').then(({ data, error }) => {
+      if (error) console.error(error);
+      setUsers(data || []);
+    });
   }, []);
 
   const generateData = async () => {
@@ -26,11 +28,15 @@ export const AdminReports = () => {
     
     setLoading(true);
     
-    const mockData = JSON.parse(localStorage.getItem('mockHistory') || '[]');
-    let records = mockData;
-    if (month) {
-       records = mockData.filter((r: any) => r.fecha.startsWith(month));
+    const { data: recordsData, error: recordsError } = await supabase
+      .from('registros_horas').select('*').eq('usuario_id', selectedUser).order('fecha', { ascending: false });
+    if (recordsError) {
+      setLoading(false);
+      alert(recordsError.message);
+      return null;
     }
+    let records = recordsData || [];
+    if (month) records = records.filter((r: any) => r.fecha.startsWith(month));
     const userData = users.find(u => u.id === selectedUser);
     
     setLoading(false);

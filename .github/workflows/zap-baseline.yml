@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   zap-baseline:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 25
     env:
       ZAP_TARGET_URL: ${{ vars.ZAP_TARGET_URL }}
@@ -35,7 +35,7 @@ jobs:
             -r reporte-zap.html -J reporte-zap.json -I
       - name: Publicar reporte para revision
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: reporte-owasp-zap
           path: zap-output/

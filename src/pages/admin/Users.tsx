@@ -23,100 +23,30 @@ export const AdminUsers = () => {
 
   const fetchUsers = async () => {
     setLoading(true);
-    const storedUsers = JSON.parse(localStorage.getItem('mockAdminUsersList') || '[]');
-    
-    if (storedUsers.length > 0) {
-      setUsers(storedUsers);
-    } else {
-      const defaultMocks = [
-        {
-          id: 'mock-user-1',
-          correo: 'scz.carlos.perez@unifranz.edu.bo',
-          nombre: 'Carlos Perez',
-          rol: 'becario',
-          estado: 'pendiente',
-          fecha_inicio_beca: null,
-          fecha_fin_beca: null,
-          carrera: 'Medicina',
-          semestre: '3er',
-          gestion: '1/2026',
-          area_jefe: null,
-          foto_perfil: null,
-          created_at: new Date(Date.now() - 3600000).toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        {
-          id: 'mock-user-2',
-          correo: 'scz.maria.gomez@unifranz.edu.bo',
-          nombre: 'Maria Gomez',
-          rol: 'becario',
-          estado: 'activo',
-          fecha_inicio_beca: '2026-03-01',
-          fecha_fin_beca: '2026-06-30',
-          carrera: 'Ingeniería',
-          semestre: '5to',
-          gestion: '1/2026',
-          area_jefe: 'Laboratorio',
-          foto_perfil: null,
-          created_at: new Date(Date.now() - 86400000).toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      setUsers(defaultMocks as User[]);
-      localStorage.setItem('mockAdminUsersList', JSON.stringify(defaultMocks));
-    }
+    const { data, error } = await supabase.from('usuarios').select('*').order('created_at', { ascending:false });
+    if (error) alert(error.message);
+    setUsers(data || []);
     setLoading(false);
   };
 
   const handleStatusChange = async (userId: string, targetStatus: 'activo' | 'rechazado' | 'pendiente') => {
-    const updated = users.map(u => u.id === userId ? { ...u, estado: targetStatus } : u);
-    setUsers(updated);
-    localStorage.setItem('mockAdminUsersList', JSON.stringify(updated));
+    const { error } = await supabase.from('usuarios').update({estado:targetStatus}).eq('id',userId);
+    if (error) return alert(error.message);
+    await fetchUsers();
   };
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    
-    const nuevoBecario: User = {
-      id: 'mock-user-' + Date.now(),
-      correo: newUser.correo,
-      nombre: newUser.nombre,
-      rol: 'becario',
-      estado: 'activo',
-      fecha_inicio_beca: new Date().toISOString().split('T')[0],
-      fecha_fin_beca: newUser.fecha_fin,
-      carrera: newUser.carrera,
-      semestre: '',
-      gestion: '2/2026',
-      area_jefe: newUser.area,
-      foto_perfil: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    const updated = [nuevoBecario, ...users];
-    setUsers(updated);
-    localStorage.setItem('mockAdminUsersList', JSON.stringify(updated));
-    
+    // Crear credenciales desde el servidor (Supabase Auth admin) o invitar al becario.
+    // No registrar contraseñas ajenas desde un navegador con clave pública.
+    alert('Por seguridad, pide al becario registrarse en Solicitar acceso; después aprueba su solicitud aquí.');
     setSaving(false);
     setShowModal(false);
-    setNewUser({ nombre: '', correo: '', password: '', carrera: '', fecha_fin: '', area: '' });
   };
 
-  const handleResetHours = (userId: string, userName: string) => {
-    if (!window.confirm(`¿Estás seguro de REINICIAR las horas acumuladas de ${userName} a 0h? Esta acción NO se puede deshacer.`)) return;
-
-    if (userId.startsWith('mock-')) {
-       // Demo wipe
-       localStorage.setItem('mockTotalHoras', '0');
-       localStorage.setItem('mockHistory', '[]');
-       alert(`Horas de ${userName} reiniciadas a 0 correctamente.`);
-       setUsers([...users]); // Forzar re-render para que actualice la vista
-       return;
-    }
-    
-    alert('Esta función requiere la base de datos conectada para buscar y borrar el historial real.');
+  const handleResetHours = async (_userId: string, _userName: string) => {
+    alert('Reinicio no habilitado: se requiere un procedimiento administrativo auditado que conserve el historial.');
   };
 
   const filteredUsers = users.filter(u => 
@@ -195,13 +125,7 @@ export const AdminUsers = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.estado === 'activo' ? (
-                        <div className="text-sm font-semibold text-primary-600 dark:text-primary-400">
-                           {user.correo.includes('prueba') || user.correo.includes('camilanadyn') ? 
-                             `${Math.floor(parseFloat(localStorage.getItem('mockTotalHoras') || '120.5'))}h` : 
-                             (user.id === 'mock-user-2' ? '85h' : '0h')}
-                        </div>
-                      ) : '-'}
+                      {user.estado === 'activo' ? 'Consultar historial' : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                       {user.estado === 'pendiente' && (

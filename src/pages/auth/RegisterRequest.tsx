@@ -33,9 +33,7 @@ export const RegisterRequest = () => {
       email,
       password,
       options: {
-        data: {
-          nombre
-        }
+        data: { nombre, carrera, semestre }
       }
     });
 
@@ -46,28 +44,7 @@ export const RegisterRequest = () => {
     }
 
     if (authData.user) {
-      // 2. Insertar en tabla usuarios (si no lo hace un trigger en Supabase)
-      const { error: dbError } = await supabase.from('usuarios').insert({
-        id: authData.user.id,
-        correo: email,
-        nombre,
-        carrera,
-        semestre,
-        rol: 'becario',
-        estado: 'pendiente'
-      });
-
-      if (dbError) {
-        // En un entorno real idealmente manejamos un fallback o verificamos si ya existe por el trigger
-        console.error(dbError);
-      }
-
-      // 3. Crear solicitud
-      await supabase.from('solicitudes').insert({
-        usuario_id: authData.user.id,
-        estado: 'pendiente'
-      });
-      
+      // El trigger de Auth crea perfil pendiente y solicitud automáticamente.
       setSuccess(true);
     }
     setLoading(false);

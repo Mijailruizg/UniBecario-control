@@ -27,23 +27,6 @@ export const StudentProfile = () => {
     setLoading(true);
     setMensaje('');
 
-    // --- MOCK BYPASS Para Demostración sin DB ---
-    if (user.id.startsWith('mock-')) {
-      setTimeout(() => {
-        const updatedUser = { ...user, ...formData };
-        setUser(updatedUser);
-        
-        const allMockUsers = JSON.parse(localStorage.getItem('mockUsersData') || '{}');
-        allMockUsers[user.correo] = updatedUser;
-        localStorage.setItem('mockUsersData', JSON.stringify(allMockUsers));
-
-        setMensaje('Perfil actualizado correctamente (Modo Demo Local).');
-        setLoading(false);
-      }, 500);
-      return;
-    }
-    // -------------------------------------------
-
     const { data, error } = await supabase
       .from('usuarios')
       .update(formData)
@@ -60,27 +43,8 @@ export const StudentProfile = () => {
     setLoading(false);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file && user) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        const base64String = reader.result as string;
-        if (user.id.startsWith('mock-')) {
-           const updatedUser = { ...user, foto_perfil: base64String };
-           setUser(updatedUser);
-
-           const allMockUsers = JSON.parse(localStorage.getItem('mockUsersData') || '{}');
-           allMockUsers[user.correo] = updatedUser;
-           localStorage.setItem('mockUsersData', JSON.stringify(allMockUsers));
-
-           setMensaje('Foto actualizada en local.');
-        } else {
-           alert('La subida requiere conexión al API.');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleImageUpload = (_e: React.ChangeEvent<HTMLInputElement>) => {
+    setMensaje('La carga de imagen está deshabilitada hasta configurar un bucket privado con permisos RLS.');
   };
 
   return (

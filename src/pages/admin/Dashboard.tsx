@@ -16,24 +16,22 @@ export const AdminDashboard = () => {
   }, []);
 
   const fetchStats = async () => {
-    // Modo Demo Local
-    const localUsers = JSON.parse(localStorage.getItem('mockAdminUsersList') || '[]');
-    
-    if (localUsers.length > 0) {
-      setStats(prev => ({
-        ...prev,
-        totalUsers: localUsers.length,
-        activeUsers: localUsers.filter((u: any) => u.estado === 'activo').length,
-        pendingUsers: localUsers.filter((u: any) => u.estado === 'pendiente').length,
-      }));
-    } else {
-      // Fallback si no han visitado Usuarios todavía
-      setStats(prev => ({ ...prev, totalUsers: 2, activeUsers: 1, pendingUsers: 1 }));
+    const [{ data: users, error: userError }, { data: hours, error: hoursError }] = await Promise.all([
+      supabase.from('usuarios').select('id,estado,rol'),
+      supabase.from('registros_horas').select('fecha,total_horas')
+    ]);
+    if (userError || hoursError) {
+      console.error(userError || hoursError);
+      return;
     }
-
-    // Horas Totales Mapeadas
-    const mockHoras = parseFloat(localStorage.getItem('mockTotalHoras') || '120.5');
-    setStats(prev => ({ ...prev, totalHoursThisMonth: mockHoras }));
+    const month = new Date().toISOString().slice(0,7);
+    setStats({
+      totalUsers: (users || []).length,
+      activeUsers: (users || []).filter((u) => u.estado === 'activo' && u.rol === 'becario').length,
+      pendingUsers: (users || []).filter((u) => u.estado === 'pendiente').length,
+      totalHoursThisMonth: (hours || []).filter((h) => h.fecha?.startsWith(month))
+        .reduce((sum,h) => sum + Number(h.total_horas || 0), 0)
+    });
   };
 
   return (
